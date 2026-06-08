@@ -70,11 +70,14 @@ def check_channels(user_id):
 
 def get_welcome_text(lang):
     if lang == 'ar':
-        return "☕ مَرحباً بك في بوت مزاجي الحصري! ✨\nالرجاء الاشتراك في قنوات البوت أولاً ثم الضغط على زر التحقق بالأسفل 👇"
+        return """☕ مَرحباً بك في بوت مزاجي الحصري! ✨
+الرجاء الاشتراك في قنوات البوت أولاً ثم الضغط على زر التحقق بالأسفل 👇"""
     elif lang == 'en':
-        return "☕ Welcome to Mazaji Bot! ✨\nPlease join our channels first, then click the verify button below 👇"
+        return """☕ Welcome to Mazaji Bot! ✨
+Please join our channels first, then click the verify button below 👇"""
     else:
-        return "☕ بەخێربێن بۆ بۆتی مزاجی! ✨\nتکایە سەرەتا جۆینی کەناڵەکانی بۆت بکەن و پاشان کلیک لەسەر پشتڕاستکردنەوە بکەن 👇"
+        return """☕ بەخێربێن بۆ بۆتی مزاجی! ✨
+تکایە سەرەتا جۆینی کەناڵەکانی بۆت بکەن و پاشان کلیک لەسەر پشتڕاستکردنەوە بکەن 👇"""
 
 # --- قسم الأعضاء (User Flow) ---
 @bot.message_handler(commands=['start'])
@@ -130,7 +133,7 @@ def show_subscription_requirements(chat_id, user_id, lang):
         markup.add(types.InlineKeyboardButton(btn_text, callback_data="verify_channels"))
         bot.send_message(chat_id, get_welcome_text(lang), reply_markup=markup)
     else:
-        btn_continue = "الانتقال للأقسام الرئيسية 📂" if lang == 'ar' else "Go to Categories 📂" if lang == 'en' else "چوون بۆ بەشەکان 📂"
+        btn_continue = "Anteqal 📂" if lang == 'ar' else "Go to Categories 📂" if lang == 'en' else "چوون بۆ بەشەکان 📂"
         markup.add(types.InlineKeyboardButton(btn_continue, callback_data="verify_channels"))
         msg_welcome = "☕ أهلاً بك في بوت مزاجي! يمكنك الانتقال للأقسام مباشرة:" if lang == 'ar' else "☕ Welcome to Mazaji Bot! Go directly to categories:" if lang == 'en' else "☕ بەخێربێن بۆ بۆتی مزاجی! ڕاستەوخۆ بچنە بەشەکان:"
         bot.send_message(chat_id, msg_welcome, reply_markup=markup)
@@ -434,7 +437,7 @@ def finalize_adding_message(message):
     if user_id in admin_state: del admin_state[user_id]
     show_admin_panel(message.chat.id)
 
-# --- لوحة التعديل الشاملة الذكية المحدثة والمصلحة تماماً ---
+# --- لوحة التعديل الشاملة الذكية المحدثة والمصلحة تماماً لـ Termux ---
 @bot.callback_query_handler(func=lambda call: call.data == "adm_edit_hub")
 def adm_edit_hub_main(call):
     delete_msg_safe(call.message.chat.id, call.message.message_id)
@@ -444,8 +447,10 @@ def adm_edit_hub_main(call):
     
     markup = types.InlineKeyboardMarkup()
     for c in cats:
-        # هنا تم تصليح قفل النص وعلامات التنصيص المزدوجة بدلاً من المفردة لتفادي أخطاء f-string (السكرين 24146)
-        markup.add(types.InlineKeyboardButton(f"📁 قسم: {c['name']}", callback_data=f"hub_choose_cat_{c['id']}"))
+        # حل مشكلة سطر 613 الحصري عبر عزل الـ f-string تماماً باستخدام علامات تنصيص ثنائية وعلامات الجمع
+        btn_text = "📁 قسم: " + str(c['name'])
+        markup.add(types.InlineKeyboardButton(text=btn_text, callback_data="hub_choose_cat_" + str(c['id'])))
+        
     markup.add(types.InlineKeyboardButton("⬅️ العودة للوحة الإدارة", callback_data="back_to_admin"))
     bot.send_message(call.message.chat.id, "📝 لوحة التعديل الحرة والموسعة، اختر القسم الذي تريد إجراء تعديلات عليه:", reply_markup=markup)
 
@@ -464,15 +469,15 @@ def hub_cat_freedom_options(call):
     
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton(f"📝 تعديل اسم القسم ({cat_name})", callback_data=f"edit_cname_{cat_id}"),
-        types.InlineKeyboardButton("➕ إضافة ملف/رسالة داخل هذا القسم", callback_data=f"add_msg_inside_{cat_id}"),
+        types.InlineKeyboardButton("📝 تعديل اسم القسم (" + str(cat_name) + ")", callback_data="edit_cname_" + str(cat_id)),
+        types.InlineKeyboardButton("➕ إضافة ملف/رسالة داخل هذا القسم", callback_data="add_msg_inside_" + str(cat_id)),
         types.InlineKeyboardButton("📁 تعديل قسم فرعي تابع له", callback_data="hub_edit_cats"),
-        types.InlineKeyboardButton("✉️ تعديل الرسالة الي جوا القسم", callback_data=f"subedit_content{msg_id_str}" if msg_info else "hub_no_msg_alert"),
-        types.InlineKeyboardButton("🎥 تعديل رابط الشرح يوتيوب", callback_data=f"subedit_yt{msg_id_str}" if msg_info else "hub_no_msg_alert"),
-        types.InlineKeyboardButton("🛠️ تعديل رابط التثبيت يوتيوب", callback_data=f"subedit_inst{msg_id_str}" if msg_info else "hub_no_msg_alert"),
+        types.InlineKeyboardButton("✉️ تعديل الرسالة الي جوا القسم", callback_data="subedit_content" + str(msg_id_str) if msg_info else "hub_no_msg_alert"),
+        types.InlineKeyboardButton("🎥 تعديل رابط الشرح يوتيوب", callback_data="subedit_yt" + str(msg_id_str) if msg_info else "hub_no_msg_alert"),
+        types.InlineKeyboardButton("🛠️ تعديل رابط التثبيت يوتيوب", callback_data="subedit_inst" + str(msg_id_str) if msg_info else "hub_no_msg_alert"),
         types.InlineKeyboardButton("⬅️ رجوع لقائمة الأقسام", callback_data="adm_edit_hub")
     )
-    bot.send_message(call.message.chat.id, f"⚙️ التحكم الكامل بالقسم [ {cat_name} ]. اختر ماذا تريد أن تفعل بالحرية الكاملة:", reply_markup=markup)
+    bot.send_message(call.message.chat.id, "⚙️ التحكم الكامل بالقسم [ " + str(cat_name) + " ]. اختر ماذا تريد أن تفعل:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data == "hub_no_msg_alert")
 def hub_no_msg_alert_logic(call):
@@ -486,7 +491,7 @@ def hub_edit_cats_list(call):
     conn.close()
     markup = types.InlineKeyboardMarkup()
     for c in cats:
-        markup.add(types.InlineKeyboardButton(f"📁 قسم: {c['name']}", callback_data=f"hub_choose_cat_{c['id']}"))
+        markup.add(types.InlineKeyboardButton("📁 قسم: " + str(c['name']), callback_data="hub_choose_cat_" + str(c['id'])))
     markup.add(types.InlineKeyboardButton("⬅️ عودة", callback_data="adm_edit_hub"))
     bot.send_message(call.message.chat.id, "اختر القسم المطلوب للتحكم بتفاصيله الكاملة:", reply_markup=markup)
 
@@ -615,89 +620,4 @@ def adm_delete_cat_list(call):
     
     markup = types.InlineKeyboardMarkup()
     for c in cats:
-        markup.add(types.InlineKeyboardButton(f"🗑️ حذف: {c['name']}", callback_data=f"del_target_{c['id']}"))
-    markup.add(types.InlineKeyboardButton("⬅️ العودة للوحة الأدمن", callback_data="back_to_admin"))
-    bot.send_message(call.message.chat.id, "اختر القسم المراد حذفه ومسح محتوياته نهائياً:", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("del_target_"))
-def finalize_delete_cat(call):
-    delete_msg_safe(call.message.chat.id, call.message.message_id)
-    cat_id = int(call.data.replace("del_target_", ""))
-    conn = get_db()
-    conn.execute("DELETE FROM categories WHERE id = ? OR parent_id = ?", (cat_id, cat_id))
-    conn.execute("DELETE FROM messages WHERE cat_id = ?", (cat_id,))
-    conn.commit()
-    conn.close()
-    bot.send_message(call.message.chat.id, "✅ تم مسح القسم ومحتوياته بالكامل من النظام.")
-    show_admin_panel(call.message.chat.id)
-
-@bot.callback_query_handler(func=lambda call: call.data == "adm_manage_ch")
-def adm_manage_channels_panel(call):
-    delete_msg_safe(call.message.chat.id, call.message.message_id)
-    conn = get_db()
-    channels = conn.execute("SELECT * FROM channels").fetchall()
-    conn.close()
-    
-    text = "📢 القنوات الإجبارية الحالية المضافة لشروط البوت:\n\n"
-    for index, ch in enumerate(channels, start=1):
-        ch_title = get_channel_name(ch['channel_id'], "قناة مشفرة/خاص")
-        text += f"{index}. الاسم: **{ch_title}**\n🆔 الـ ID: `{ch['channel_id']}` \n🔗 الرابط: {ch['link']}\n\n"
-        
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("➕ إضافة قناة جديدة للشروط", callback_data="add_new_channel_req"))
-    markup.add(types.InlineKeyboardButton("🧹 تفريغ وحذف كل القنوات", callback_data="clear_all_channels_req"))
-    markup.add(types.InlineKeyboardButton("⬅️ العودة للوحة الأدمن", callback_data="back_to_admin"))
-    bot.send_message(call.message.chat.id, text, parse_mode="Markdown", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data == "add_new_channel_req")
-def add_new_channel_step1(call):
-    delete_msg_safe(call.message.chat.id, call.message.message_id)
-    msg = bot.send_message(call.message.chat.id, "أرسل معرف القناة الرقمي (مثال يبدأ بـ سالب 100: `-100123456789`) ويجب أن يكون البوت مشرفاً فيها أولاً:")
-    bot.register_next_step_handler(msg, add_new_channel_step2)
-
-def add_new_channel_step2(message):
-    ch_id = message.text.strip()
-    delete_msg_safe(message.chat.id, message.message_id)
-    admin_state[message.from_user.id] = {'ch_id': ch_id}
-    msg = bot.send_message(message.chat.id, "أرسل الآن رابط الدعوة الخاص بالقناة ليضغط عليه المستخدم للاشتراك:")
-    bot.register_next_step_handler(msg, add_new_channel_finalize)
-
-def add_new_channel_finalize(message):
-    user_id = message.from_user.id
-    if user_id not in admin_state: return
-    link = message.text.strip()
-    ch_id = admin_state[user_id]['ch_id']
-    
-    delete_msg_safe(message.chat.id, message.message_id)
-    conn = get_db()
-    conn.execute("INSERT OR REPLACE INTO channels (channel_id, link) VALUES (?, ?)", (ch_id, link))
-    conn.commit()
-    conn.close()
-    
-    bot.send_message(message.chat.id, "✅ تم حفظ القناة وإدراجها ضمن الشروط الإجبارية بنجاح!")
-    if user_id in admin_state: del admin_state[user_id]
-    show_admin_panel(message.chat.id)
-
-@bot.callback_query_handler(func=lambda call: call.data == "clear_all_channels_req")
-def clear_channels_req_logic(call):
-    delete_msg_safe(call.message.chat.id, call.message.message_id)
-    conn = get_db()
-    conn.execute("DELETE FROM channels")
-    conn.commit()
-    conn.close()
-    bot.send_message(call.message.chat.id, "🧹 تم مسح وإلغاء جميع القنوات الإجبارية بنجاح.")
-    show_admin_panel(call.message.chat.id)
-
-@bot.callback_query_handler(func=lambda call: call.data == "user_give_review")
-def user_give_review_start(call):
-    delete_msg_safe(call.message.chat.id, call.message.message_id)
-    markup = types.InlineKeyboardMarkup()
-    # هنا تم تصليح قفل السلسلة النصية وعلامات التنصيص بالكامل للنجوم (السكرين 24142)
-    markup.row(
-        types.InlineKeyboardButton("⭐", callback_data="rate_1"),
-        types.InlineKeyboardButton("⭐⭐", callback_data="rate_2"),
-        types.InlineKeyboardButton("⭐⭐⭐", callback_data="rate_3"),
-        types.InlineKeyboardButton("⭐⭐⭐⭐", callback_data="rate_4"),
-        types.InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data="rate_5")
-    )
-    bot.send_message(call.message.chat.id, "اختر عدد النجوم لتقييم البوت:", reply_markup=markup)
+        markup.add
